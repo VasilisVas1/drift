@@ -153,17 +153,37 @@ export function randomWinRate(level, limit, trials, rng) {
   return wins / trials;
 }
 
-// ---------- difficulty ----------
-// index 0 = Monday … 6 = Sunday (UTC). Easier early in the week, harder at the weekend.
-export const DIFFICULTY = [
-  { name: 'Mon', label: 'Breezy',   size: 6, marbles: [1, 2], crates: [0, 0], pits: [0, 1], par: [4, 5],   slack: 3, walls: [5, 8]  },
-  { name: 'Tue', label: 'Easy',     size: 6, marbles: [2, 2], crates: [0, 0], pits: [0, 1], par: [5, 6],   slack: 3, walls: [5, 8]  },
-  { name: 'Wed', label: 'Medium',   size: 7, marbles: [2, 2], crates: [0, 1], pits: [1, 2], par: [6, 7],   slack: 3, walls: [6, 10] },
-  { name: 'Thu', label: 'Medium',   size: 7, marbles: [2, 3], crates: [0, 1], pits: [1, 2], par: [6, 8],   slack: 2, walls: [6, 10] },
-  { name: 'Fri', label: 'Tricky',   size: 7, marbles: [3, 3], crates: [0, 1], pits: [1, 2], par: [7, 9],   slack: 2, walls: [6, 10] },
-  { name: 'Sat', label: 'Hard',     size: 7, marbles: [3, 3], crates: [0, 2], pits: [1, 3], par: [8, 11],  slack: 2, walls: [6, 10] },
-  { name: 'Sun', label: 'Brutal',   size: 7, marbles: [3, 3], crates: [1, 2], pits: [1, 3], par: [9, 12],  slack: 2, walls: [6, 10] },
+// ---------- difficulty tiers ----------
+// Levels climb through these tiers (see tierForLevel). size = board width/height.
+export const TIERS = [
+  { name: 'Intro',   size: 5, marbles: [1, 1], crates: [0, 0], pits: [0, 0], par: [2, 3],  walls: [3, 5]  },
+  { name: 'Breezy',  size: 6, marbles: [1, 2], crates: [0, 0], pits: [0, 1], par: [4, 5],  walls: [5, 8]  },
+  { name: 'Easy',    size: 6, marbles: [2, 2], crates: [0, 0], pits: [0, 1], par: [5, 6],  walls: [5, 8]  },
+  { name: 'Medium',  size: 7, marbles: [2, 2], crates: [0, 1], pits: [1, 2], par: [6, 7],  walls: [6, 10] },
+  { name: 'Tricky',  size: 7, marbles: [2, 3], crates: [0, 1], pits: [1, 2], par: [7, 8],  walls: [6, 10] },
+  { name: 'Hard',    size: 7, marbles: [3, 3], crates: [0, 2], pits: [1, 2], par: [8, 10], walls: [6, 10] },
+  { name: 'Expert',  size: 7, marbles: [3, 3], crates: [0, 2], pits: [1, 3], par: [9, 11], walls: [6, 10] },
+  { name: 'Brutal',  size: 7, marbles: [3, 3], crates: [1, 2], pits: [1, 3], par: [10, 13], walls: [6, 10] },
 ];
+
+// Level number -> tier index. Every 5th level is a "boss" one tier above its neighbours.
+const TIER_STARTS = [1, 4, 11, 21, 33, 46, 61, 81];
+export function tierForLevel(n) {
+  let t = 0;
+  for (let i = 0; i < TIER_STARTS.length; i++) if (n >= TIER_STARTS[i]) t = i;
+  if (n > 5 && n % 5 === 0) t = Math.min(TIERS.length - 1, t + 1);
+  return t;
+}
+
+// ---------- move limit & stars ----------
+// 3★ = par (optimal). 2★ = a little over par. 1★ = solved within the move limit.
+export function limitFor(par) { return par + Math.max(3, Math.ceil(par * 0.75)); }
+export function twoStarMax(par) { return par + Math.max(1, Math.ceil(par * 0.3)); }
+export function starsFor(moves, par) {
+  if (moves <= par) return 3;
+  if (moves <= twoStarMax(par)) return 2;
+  return 1;
+}
 
 // ---------- generator ----------
 function randInt(rng, [lo, hi]) { return lo + Math.floor(rng() * (hi - lo + 1)); }
@@ -195,8 +215,8 @@ function randomBoard(rng, diff) {
 }
 
 // Tries random boards until one meets the difficulty band. Deterministic for a given seed.
-export function generate(seed, diffIndex, { maxTries = 4000 } = {}) {
-  const diff = DIFFICULTY[diffIndex];
+export function generate(seed, tierIndex, { maxTries = 4000 } = {}) {
+  const diff = TIERS[tierIndex];
   const rng = mulberry32(seed);
   let best = null;
   for (let t = 0; t < maxTries; t++) {
@@ -208,11 +228,11 @@ export function generate(seed, diffIndex, { maxTries = 4000 } = {}) {
       if (!best || sol.par > best.par) best = { rows, par: sol.par, solution: sol.solution };
       continue;
     }
-    const limit = sol.par + diff.slack;
-    const wr = randomWinRate(level, limit, 300, rng);
-    if (wr > 0.02) continue;
+    const limit = limitFor(sol.par);
+    // reject boards that random swiping solves too often (intro boards are allowed to be easy)
+    if (tierIndex > 0 && randomWinRate(level, limit, 300, rng) > 0.03) continue;
     return { rows, par: sol.par, solution: sol.solution, limit, tries: t + 1 };
   }
-  if (best) return { ...best, limit: best.par + diff.slack, fallback: true };
+  if (best) return { ...best, limit: limitFor(best.par), fallback: true };
   return null;
 }

@@ -61,5 +61,6 @@ export const sfx = {
     tone({ freq: 1568, type: 'sine', dur: 0.6, vol: 0.08, delay: 0.5 });
   },
   lose() { [392, 330, 262, 196].forEach((f, i) => tone({ freq: f, type: 'triangle', dur: 0.3, vol: 0.12, delay: i * 0.14 })); },
+  star(i) { tone({ freq: [784, 988, 1319][i] || 1319, type: 'triangle', dur: 0.28, vol: 0.16 }); tone({ freq: ([784, 988, 1319][i] || 1319) * 2, type: 'sine', dur: 0.18, vol: 0.05, delay: 0.03 }); },
   tap() { tone({ freq: 880, type: 'sine', dur: 0.05, vol: 0.06 }); },
 };
