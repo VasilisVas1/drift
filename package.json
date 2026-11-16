@@ -1,0 +1,10 @@
+{
+  "name": "drift",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "puzzles": "node tools/generate.mjs 1 365",
+    "check": "node tools/generate.mjs --check"
+  }
+}

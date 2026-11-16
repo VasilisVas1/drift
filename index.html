@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>DRIFT — the daily tilt puzzle</title>
+  <meta name="description" content="Tilt the board, sink every marble in its matching hole. One new puzzle every day. Two minutes, three lives, zero mercy on Sundays." />
+  <meta name="theme-color" content="#F3E4DA" />
+
+  <!-- Open Graph / social previews. Replace the URL if you host it elsewhere. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DRIFT" />
+  <meta property="og:title" content="DRIFT — the daily tilt puzzle" />
+  <meta property="og:description" content="Tilt the board. Every marble slides at once. Sink them all in their own holes before you run out of moves." />
+  <meta property="og:url" content="https://vasilisvasileiou.com/drift/" />
+  <meta property="og:image" content="https://vasilisvasileiou.com/drift/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="DRIFT — the daily tilt puzzle" />
+  <meta name="twitter:description" content="Tilt the board. Every marble slides at once. One puzzle a day." />
+  <meta name="twitter:image" content="https://vasilisvasileiou.com/drift/assets/og-image.png" />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <button class="icon-btn" id="btn-help" aria-label="How to play">?</button>
+      <div class="brand">
+        <h1 class="wordmark">Drift</h1>
+        <div class="subline mono" id="subline">No. — · —</div>
+      </div>
+      <div class="top-right">
+        <button class="icon-btn" id="btn-stats" aria-label="Statistics">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 20V11M10 20V5M16 20v-7M22 20H2" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-sound" aria-label="Toggle sound">
+          <svg id="ico-sound" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path id="ico-waves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path id="ico-mute" d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="banner" id="mode-banner" hidden></div>
+
+    <section class="hud">
+      <div class="hud-cell">
+        <span class="hud-label">Lives</span>
+        <span class="lives" id="lives"></span>
+      </div>
+      <div class="hud-cell center">
+        <span class="hud-label">Moves</span>
+        <span class="hud-value mono"><b id="moves">0</b><span class="dim">/</span><span id="limit">0</span></span>
+      </div>
+      <div class="hud-cell right">
+        <span class="hud-label">Par</span>
+        <span class="hud-value mono" id="par">0</span>
+      </div>
+    </section>
+    <div class="movebar"><div class="movebar-fill" id="movebar"></div></div>
+
+    <main class="stage" id="stage">
+      <div class="board-wrap" id="board-wrap">
+        <div class="board" id="board" role="application" aria-label="Puzzle board. Use arrow keys or swipe to tilt."></div>
+        <div class="swipe-hint" id="swipe-hint" aria-hidden="true">
+          <div class="hand"></div>
+          <span>Swipe to tilt</span>
+        </div>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+
+    <section class="controls">
+      <div class="dpad">
+        <button class="pad" data-dir="left" aria-label="Tilt left">◀</button>
+        <button class="pad" data-dir="up" aria-label="Tilt up">▲</button>
+        <button class="pad" data-dir="down" aria-label="Tilt down">▼</button>
+        <button class="pad" data-dir="right" aria-label="Tilt right">▶</button>
+      </div>
+      <button class="pill ghost small" id="btn-restart">Restart · costs a life</button>
+    </section>
+
+    <footer class="footer">
+      <div class="testbar" id="testbar" hidden>
+        <span class="test-tag mono">Test mode</span>
+        <button class="pill small mint" id="t-prev" aria-label="Previous day">◀</button>
+        <button class="pill small mint" id="t-replay">Replay</button>
+        <button class="pill small mint" id="t-random">Random</button>
+        <button class="pill small mint" id="t-next" aria-label="Next day">▶</button>
+      </div>
+      <!-- MONETIZATION PLACEHOLDER: the paid "extra plays" entry point. See README → Monetization. -->
+      <button class="pill blush" id="btn-archive">Archive / Practice — coming soon</button>
+    </footer>
+  </div>
+
+  <!-- How to play -->
+  <div class="modal" id="modal-help" hidden>
+    <div class="sheet">
+      <div class="sheet-banner">How to play</div>
+      <div class="sheet-body">
+        <p class="lead">Welcome to the club. Tilt the board — <em>every</em> marble slides at once until it hits something.</p>
+        <ul class="howto">
+          <li><span class="demo demo-tilt"><i class="m m-R"></i></span><div><b>Swipe to tilt.</b> Or use the arrow keys. Marbles roll all the way until a wall, a crate or another marble stops them.</div></li>
+          <li><span class="demo"><i class="h h-G"></i></span><div><b>Sink each marble in its own colour.</b> Rolling over a hole drops the marble in, and the wrong colour costs you a life.</div></li>
+          <li><span class="demo"><i class="pit-demo"></i></span><div><b>Avoid the drains.</b> They swallow any marble. <b>Crates</b> slide too but never fall.</div></li>
+          <li><span class="demo mono demo-num">3</span><div><b>Three lives, limited moves.</b> Match <b>par</b> (the fewest moves possible) for a ⭐. Puzzles get harder towards Sunday.</div></li>
+        </ul>
+        <button class="pill blush wide" id="help-close">Let’s roll</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results / stats -->
+  <div class="modal" id="modal-stats" hidden>
+    <div class="sheet">
+      <div class="sheet-banner" id="stats-banner">Statistics</div>
+      <div class="sheet-body">
+        <div class="result-head" id="result-head" hidden>
+          <div class="result-title" id="result-title">Sunk it!</div>
+          <div class="result-sub mono" id="result-sub"></div>
+          <div class="result-attempts" id="result-attempts"></div>
+        </div>
+        <div class="stat-grid">
+          <div><b id="st-played">0</b><span>Played</span></div>
+          <div><b id="st-win">0</b><span>Win %</span></div>
+          <div><b id="st-streak">0</b><span>Streak</span></div>
+          <div><b id="st-best">0</b><span>Best</span></div>
+        </div>
+        <div class="ledger-title">Won on</div>
+        <div class="dist" id="dist"></div>
+        <div class="ledger-row"><span>Perfect (par) games</span><span class="mono" id="st-perfect">0</span></div>
+        <div class="ledger-row" id="countdown-row"><span>Next puzzle in</span><span class="mono" id="countdown">--:--:--</span></div>
+        <div class="sheet-actions">
+          <button class="pill blush wide" id="btn-share" hidden>Share result</button>
+          <div class="test-actions" id="stats-test-actions" hidden>
+            <button class="pill mint" id="s-replay">Replay</button>
+            <button class="pill mint" id="s-random">Random puzzle</button>
+          </div>
+          <button class="pill ghost wide" id="stats-close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
